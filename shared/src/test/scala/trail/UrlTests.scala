@@ -122,7 +122,20 @@ class UrlTests2 extends FunSpec with Matchers {
   it("url() should work") {
     val userInfo = Root / "user" / Arg[String] / Arg[Boolean]
     val url      = userInfo(("hello", false))
+    assert(url == "/user/hello/false")
+  }
 
+  it("url() should work with path end") {
+    val route1 = Root / EndPath
+    val url1 = route1.url(())
+    assert(url1 == "/")
+
+    val route2 = Root / "test" / EndPath
+    val url2 = route2.url(())
+    assert(url2 == "/test")
+
+    val userInfo = Root / "user" / Arg[String] / Arg[Boolean] / EndPath
+    val url      = userInfo(("hello", false))
     assert(url == "/user/hello/false")
   }
 

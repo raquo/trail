@@ -8,12 +8,15 @@ class RouteParseTests extends FunSpec with Matchers {
   it("Parse root") {
     val root = Root
     assert(root.parse("/").contains(()))
+    assert(root.parse("/test").contains(())) // Use EndPath if you don't want this
+    assert(root.parse("/?user=bob").contains(()))
   }
 
   it("Parse one path element") {
     val root = Root / "test"
     assert(root.parse("/").isEmpty)
     assert(root.parse("/test").contains(()))
+    assert(root.parse("/test/2").contains(())) // Use EndPath if you don't want this
     assert(root.parse("/test2").isEmpty)
   }
 
@@ -21,6 +24,25 @@ class RouteParseTests extends FunSpec with Matchers {
     val route = Root / "user" / Arg[String]
     assert(route.parse(trail.Path("/user/bob")) === Some("bob"))
     assert(route.parse(trail.Path("/user/bob/test")) === Some("bob"))
+  }
+
+  it("Parse root with end") {
+    val root = Root / EndPath
+    assert(root.parse("/").contains(()))
+    assert(root.parse("/test").isEmpty)
+    assert(root.parse("/test/2").isEmpty)
+    assert(root.parse("/?user=bob").contains(()))
+  }
+
+  it("Parse one path element with end") {
+    val route = Root / "test" / EndPath
+    assert(route.parse("/").isEmpty)
+    assert(route.parse("/test").contains(()))
+    assert(route.parse("/test/").contains(())) // @TODO Not sure if I want this
+    assert(route.parse("/test?user=bob").contains(()))
+    assert(route.parse("/test/?user=bob").contains(()))
+    assert(route.parse("/test2").isEmpty)
+    assert(route.parse("/test/2").isEmpty)
   }
 
   it("Route can be parsed from Path") {

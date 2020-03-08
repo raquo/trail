@@ -20,12 +20,16 @@ case object Root extends Route[Unit] {
     else Some((), path.copy(path = path.path.tail))
 }
 
+object EndPath
+
 object Route {
   implicit class Route0Extensions(route: Route[Unit]) {
     def /[T](arg: Arg[T]): Route.ConcatRight[T] =
       Route.ConcatRight(route, Route.Dynamic(arg))
     def /[T](value: T)(implicit staticElement: StaticElement[T]): Route.ConcatRight[Unit] =
       Route.ConcatRight(route, Route.Static(staticElement.f(value)))
+    def /[T](end: EndPath.type): Route.ConcatEnd[Unit] =
+      Route.ConcatEnd(route)
     def &[T](param: Param[T]): ParamRoute0[T] =
       ParamRoute0(route, param)
     def $[T](fragment: Fragment[T]): FragmentRoute0[T] =
@@ -37,6 +41,8 @@ object Route {
       Route.ConcatBoth(route, Route.Dynamic(arg))
     def /[T](value: T)(implicit staticElement: StaticElement[T]): Route.ConcatLeft[P] =
       Route.ConcatLeft(route, Route.Static(staticElement.f(value)))
+    def /[T](end: EndPath.type): Route.ConcatEnd[P] =
+      Route.ConcatEnd(route)
     def &[T](param: Param[T]): ParamRoute[P, T] = ParamRoute(route, param)
     def $[T](fragment: Fragment[T]): FragmentRoute[P, T] =
       FragmentRoute(route, fragment)
@@ -89,6 +95,12 @@ object Route {
         (lv, lp) <- left.parseInternal(path)
         (rv, rp) <- right.parseInternal(lp)
       } yield ((lv, rv), rp)
+  }
+
+  case class ConcatEnd[T](route: Route[T]) extends Route[T] {
+    override def url(args: T): String = route.url(args)
+    override def parseInternal(path: Path): Option[(T, Path)] =
+      route.parseInternal(path).filter(_._2.path.isEmpty)
   }
 
   case class FragmentRoute0[P](route: Route[Unit], fragment: Fragment[P]) extends Route[P] {
